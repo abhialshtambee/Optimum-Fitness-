@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimum Fitness | 12-Session PT Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        gym: {
+                            bg: '#0b0d10',
+                            card: '#141820',
+                            surface: '#1d222d',
+                            border: '#2a303d',
+                            orange: '#ff5e00',
+                            orangeHover: '#e05200',
+                            whatsapp: '#25d366',
+                            whatsappHover: '#1ebe5d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0d10;
+            color: #ffffff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0d10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff5e00;
+        }
+        /* Date and Time input icon color fix for dark mode */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gym-bg text-white selection:bg-gym-orange selection:text-white">
+
+    <!-- Toast Notification Container (Replaces alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-gym-bg/95 backdrop-blur-md border-b border-gym-border px-4 sm:px-6 py-3.5">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gym-orange flex items-center justify-center text-white font-display font-black text-xl shadow-lg shadow-gym-orange/20">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-lg sm:text-xl tracking-wide leading-none">
+                        OPTIMUM <span class="text-gym-orange">FITNESS</span>
+                    </h1>
+                    <p id="header-subtitle" class="text-xs text-gray-400 font-medium mt-0.5">12-Session PT Client Tracker</p>
+                </div>
+            </div>
+
+            <!-- Right Actions: Live Cloud Status & Trainer Controls -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <span id="save-indicator" class="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg">
+                    <i class="fa-solid fa-circle-notch fa-spin text-gym-orange"></i> Connecting...
+                </span>
+
+                <!-- Trainer-only Header Actions -->
+                <div id="trainer-header-actions" class="flex items-center gap-2 sm:gap-3">
+                    <button onclick="openPinSettingsModal()" title="Set Trainer Security PIN" class="p-2.5 rounded-xl bg-gym-card hover:bg-gym-surface border border-gym-border text-gray-300 hover:text-white transition text-xs sm:text-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-halved text-gym-orange"></i>
+                        <span class="hidden md:inline">PIN</span>
+                    </button>
+
+                    <!-- Backup / Restore Dropdown or Buttons -->
+                    <button onclick="exportData()" title="Download Backup JSON" class="p-2.5 rounded-xl bg-gym-card hover:bg-gym-surface border border-gym-border text-gray-300 hover:text-white transition text-xs sm:text-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-download text-gym-orange"></i>
+                        <span class="hidden md:inline">Backup</span>
+                    </button>
+                    <label title="Restore Backup JSON" class="cursor-pointer p-2.5 rounded-xl bg-gym-card hover:bg-gym-surface border border-gym-border text-gray-300 hover:text-white transition text-xs sm:text-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-upload text-gym-orange"></i>
+                        <span class="hidden md:inline">Restore</span>
+                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                    </label>
+
+                    <button onclick="openAddClientModal()" class="px-3.5 py-2.5 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white font-semibold text-xs sm:text-sm shadow-lg shadow-gym-orange/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>New Client</span>
+                    </button>
+                </div>
+
+                <!-- Client Portal Badge (Shown in Client Live View) -->
+                <div id="client-header-badge" class="hidden items-center gap-2">
+                    <span class="px-3 py-1.5 rounded-xl bg-gym-surface border border-gym-border text-xs font-bold text-gray-200 flex items-center gap-1.5">
+                        <i class="fa-solid fa-mobile-screen-button text-gym-orange"></i> Client Live Portal
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div id="app-layout-grid" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Sidebar: Client List (Hidden in Client Live View) -->
+        <aside id="trainer-sidebar" class="lg:col-span-3 flex flex-col gap-4">
+            <div class="bg-gym-card border border-gym-border rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-display font-bold text-sm uppercase tracking-wider text-gray-400">Your Clients</h2>
+                    <span id="client-count-badge" class="text-xs font-bold bg-gym-surface text-gym-orange px-2 py-0.5 rounded-full">0</span>
+                </div>
+                
+                <!-- Search Client -->
+                <div class="relative mb-3">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                    <input type="text" id="search-client" oninput="renderClientList()" placeholder="Search client..." class="w-full bg-gym-bg border border-gym-border rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gym-orange transition">
+                </div>
+
+                <!-- Client Cards List -->
+                <div id="client-list" class="flex lg:flex-col gap-2.5 overflow-x-auto lg:overflow-y-auto max-h-[65vh] pb-1 lg:pb-0">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace: Active Client & 12 Sessions -->
+        <main class="lg:col-span-9 flex flex-col gap-6" id="main-workspace">
+            <!-- Populated via JS -->
+        </main>
+
+    </div>
+
+    <!-- Subtle Footer with Trainer Login Switch in Client View -->
+    <footer class="border-t border-gym-border/60 py-4 px-4 sm:px-6 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>&copy; 2026 Optimum Fitness • Live Personal Training Tracker</span>
+            <div id="footer-mode-control"></div>
+        </div>
+    </footer>
+
+    <!-- Modal: Add / Edit Client -->
+    <div id="client-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-gym-card border border-gym-border rounded-2xl w-full max-w-lg p-6 shadow-2xl my-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 id="modal-title" class="font-display font-bold text-xl text-white">Add New <span class="text-gym-orange">PT Client</span></h3>
+                <button onclick="closeClientModal()" class="w-8 h-8 rounded-lg bg-gym-surface text-gray-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="client-form" onsubmit="saveClientForm(event)" class="flex flex-col gap-4">
+                <input type="hidden" id="edit-client-id">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Client Name *</label>
+                        <input type="text" id="client-name" required placeholder="e.g. Rahul Sharma" class="w-full bg-gym-bg border border-gym-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gym-orange">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">WhatsApp Number *</label>
+                        <div class="flex">
+                            <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gym-border bg-gym-surface text-gray-300 text-sm font-semibold">
+                                +91
+                            </span>
+                            <input type="tel" id="client-phone" required pattern="[0-9]{10}" maxlength="10" placeholder="9876543210" class="w-full bg-gym-bg border border-gym-border rounded-r-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gym-orange">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Start Date *</label>
+                        <input type="date" id="client-start-date" required class="w-full bg-gym-bg border border-gym-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gym-orange">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Fitness Goal</label>
+                        <select id="client-goal" class="w-full bg-gym-bg border border-gym-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gym-orange">
+                            <option value="Fat Loss & Conditioning">Fat Loss & Conditioning</option>
+                            <option value="Muscle Gain & Hypertrophy">Muscle Gain & Hypertrophy</option>
+                            <option value="Strength & Power">Strength & Power</option>
+                            <option value="General Fitness & Stamina">General Fitness & Stamina</option>
+                            <option value="Body Recomposition">Body Recomposition</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Payment & Activation Section -->
+                <div class="bg-gym-bg/80 border border-gym-border rounded-xl p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-gym-orange flex items-center gap-1.5">
+                            <i class="fa-solid fa-indian-rupee-sign"></i> Payment & Activation Status
+                        </span>
+                    </div>
+
+                    <!-- Paid (Active) vs Unpaid Toggle Switch -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="payment-status" value="paid" id="status-paid" class="peer sr-only" checked onchange="updatePaymentDateLabel()">
+                            <div class="p-3 rounded-xl border border-gym-border bg-gym-card peer-checked:bg-emerald-500/15 peer-checked:border-emerald-500 text-center transition">
+                                <div class="text-xs font-extrabold text-gray-400 peer-checked:text-emerald-400 flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-circle-check text-emerald-400"></i> PAID (Activate)
+                                </div>
+                                <div class="text-[10px] text-gray-500 mt-0.5">Membership Active</div>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="payment-status" value="unpaid" id="status-unpaid" class="peer sr-only" onchange="updatePaymentDateLabel()">
+                            <div class="p-3 rounded-xl border border-gym-border bg-gym-card peer-checked:bg-red-500/15 peer-checked:border-red-500 text-center transition">
+                                <div class="text-xs font-extrabold text-gray-400 peer-checked:text-red-400 flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-circle-xmark text-red-400"></i> UNPAID
+                                </div>
+                                <div class="text-[10px] text-gray-500 mt-0.5">Inactive Until Paid</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Package Fee (₹) *</label>
+                            <input type="number" id="client-fee" required min="0" step="1" placeholder="6000" class="w-full bg-gym-card border border-gym-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-gym-orange">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Payment Mode</label>
+                            <select id="client-payment-mode" class="w-full bg-gym-card border border-gym-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-gym-orange">
+                                <option value="UPI / GPay">UPI / GPay</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label id="payment-date-label" class="block text-[11px] font-semibold text-gray-400 mb-1">Paid Date</label>
+                            <input type="date" id="client-payment-date" class="w-full bg-gym-card border border-gym-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-gym-orange">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-2 pt-4 border-t border-gym-border">
+                    <button type="button" onclick="closeClientModal()" class="px-4 py-2.5 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 text-sm font-medium transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white text-sm font-bold shadow-lg shadow-gym-orange/20 transition">
+                        Save Client
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Custom Confirmation Dialog (Replaces confirm()) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gym-card border border-gym-border rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirm-title" class="font-display font-bold text-lg text-white mb-2">Are you sure?</h3>
+            <p id="confirm-message" class="text-sm text-gray-400 mb-6">This action cannot be undone.</p>
+            <div class="flex items-center justify-end gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 text-sm font-medium">Cancel</button>
+                <button id="confirm-yes-btn" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Trainer PIN Unlock (Prevents clients from editing) -->
+    <div id="trainer-pin-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gym-card border border-gym-border rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-2xl bg-gym-orange/15 border border-gym-orange/30 text-gym-orange flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1">Trainer Dashboard Access</h3>
+            <p class="text-xs text-gray-400 mb-4">Enter your 4-digit Trainer PIN to switch to Trainer Mode. (Default PIN: <strong class="text-gray-200">1234</strong>)</p>
+            <form onsubmit="verifyTrainerPin(event)" class="space-y-4">
+                <input type="password" id="trainer-pin-input" inputmode="numeric" maxlength="6" required placeholder="••••" class="w-full bg-gym-bg border border-gym-border rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] font-bold text-white focus:outline-none focus:border-gym-orange">
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeTrainerPinModal()" class="px-4 py-2 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white text-xs font-bold">Unlock Trainer View</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Customize Trainer PIN -->
+    <div id="pin-settings-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gym-card border border-gym-border rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-2xl bg-gym-orange/15 border border-gym-orange/30 text-gym-orange flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1">Trainer Security PIN</h3>
+            <p class="text-xs text-gray-400 mb-4">Clients opening their shared live link cannot switch to your Trainer Dashboard without this PIN.</p>
+            <form onsubmit="saveNewTrainerPin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Set 4-Digit Trainer PIN</label>
+                    <input type="text" id="new-trainer-pin-input" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6" required placeholder="1234" class="w-full bg-gym-bg border border-gym-border rounded-xl px-4 py-2.5 text-center text-lg tracking-widest font-bold text-white focus:outline-none focus:border-gym-orange">
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" onclick="closePinSettingsModal()" class="px-4 py-2 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white text-xs font-bold">Save PIN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add to Home Screen Guide for Clients -->
+    <div id="homescreen-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gym-card border border-gym-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-gym-orange/15 text-gym-orange flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-lg text-white">Save to Home Screen</h3>
+                </div>
+                <button onclick="closeHomeScreenModal()" class="w-8 h-8 rounded-lg bg-gym-surface text-gray-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs sm:text-sm text-gray-300 mb-4">Save your personal Optimum Fitness tracker to your phone's Home Screen so you can check your live sessions anytime like an app:</p>
+            <div class="space-y-3 text-xs sm:text-sm">
+                <div class="bg-gym-bg border border-gym-border rounded-xl p-3.5">
+                    <div class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-brands fa-android"></i> Android (Chrome)
+                    </div>
+                    <p class="text-gray-300">Tap the <strong>3 dots (⋮)</strong> in the top-right corner of Chrome &rarr; tap <strong>"Add to Home screen"</strong> &rarr; tap <strong>Add</strong>.</p>
+                </div>
+                <div class="bg-gym-bg border border-gym-border rounded-xl p-3.5">
+                    <div class="font-bold text-sky-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-brands fa-apple"></i> iPhone (Safari)
+                    </div>
+                    <p class="text-gray-300">Tap the <strong>Share icon (<i class="fa-solid fa-arrow-up-from-bracket"></i>)</strong> at the bottom of Safari &rarr; scroll down &amp; tap <strong>"Add to Home Screen"</strong> &rarr; tap <strong>Add</strong>.</p>
+                </div>
+            </div>
+            <button onclick="closeHomeScreenModal()" class="mt-5 w-full py-2.5 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white font-bold text-sm transition">
+                Got It!
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // DATA, CLOUD SYNC & DUAL-MODE STATE
+        // ==========================================
+        const STORAGE_KEY = 'optimum_fitness_pt_clients_v1';
+        const TRAINER_PIN_KEY = 'optimum_fitness_trainer_pin';
+        const COLLECTION_NAME = 'optimum_fitness_clients';
+        
+        const MOTIVATION_QUOTES = [
+            "Discipline is doing what needs to be done, even if you don't want to do it. Proud of your 12-session dedication!",
+            "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success!",
+            "Your body can stand almost anything. It's your mind that you have to convince. Keep pushing your limits!",
+            "The pain you feel today will be the strength you feel tomorrow. Amazing job completing all 12 sessions!",
+            "Don't stop when you're tired. Stop when you're done. Let's keep this momentum going into your next phase!"
+        ];
+
+        // Detect Client Live Portal Mode via URL query param (?client=<clientId>)
+        const urlParams = new URLSearchParams(window.location.search);
+        let sharedClientId = urlParams.get('client');
+        let isClientView = Boolean(sharedClientId);
+
+        let clients = [];
+        let activeClientId = sharedClientId || null;
+        let singleClientData = null;
+        let selectedQuoteIndex = 0;
+
+        // Firebase Cloud State
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let isCloudConnected = false;
+        let unsubscribeCloud = null;
+        const fieldDebounceTimers = {};
+
+        function getTrainerPin() {
+            return localStorage.getItem(TRAINER_PIN_KEY) || '1234';
+        }
+
+        function updateConnectionBadge(status, text) {
+            const indicator = document.getElementById('save-indicator');
+            if (!indicator) return;
+            if (status === 'live') {
+                indicator.className = 'inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1.5 rounded-lg font-semibold';
+                indicator.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${text || 'Cloud Synced'}`;
+            } else if (status === 'saving') {
+                indicator.className = 'inline-flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1.5 rounded-lg font-semibold';
+                indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${text || 'Syncing...'}`;
+            } else {
+                indicator.className = 'inline-flex items-center gap-1.5 text-xs text-gray-300 bg-gym-surface border border-gym-border px-2.5 py-1.5 rounded-lg font-medium';
+                indicator.innerHTML = `<i class="fa-solid fa-hard-drive text-gym-orange"></i> ${text || 'Local Mode'}`;
+            }
+        }
+
+        function applyModeLayout() {
+            const sidebar = document.getElementById('trainer-sidebar');
+            const mainWorkspace = document.getElementById('main-workspace');
+            const trainerActions = document.getElementById('trainer-header-actions');
+            const clientBadge = document.getElementById('client-header-badge');
+            const headerSubtitle = document.getElementById('header-subtitle');
+            const footerControl = document.getElementById('footer-mode-control');
+
+            if (isClientView) {
+                sidebar.classList.add('hidden');
+                mainWorkspace.classList.remove('lg:col-span-9');
+                mainWorkspace.classList.add('lg:col-span-12', 'max-w-4xl', 'mx-auto', 'w-full');
+                trainerActions.classList.add('hidden');
+                clientBadge.classList.remove('hidden');
+                clientBadge.classList.add('flex');
+                headerSubtitle.textContent = 'Client Live Session Tracker';
+                footerControl.innerHTML = `
+                    <button onclick="openTrainerPinModal()" class="text-gray-500 hover:text-gym-orange transition underline underline-offset-2">
+                        <i class="fa-solid fa-lock mr-1"></i> Trainer Login
+                    </button>
+                `;
+            } else {
+                sidebar.classList.remove('hidden');
+                mainWorkspace.classList.remove('lg:col-span-12', 'max-w-4xl', 'mx-auto', 'w-full');
+                mainWorkspace.classList.add('lg:col-span-9');
+                trainerActions.classList.remove('hidden');
+                clientBadge.classList.add('hidden');
+                clientBadge.classList.remove('flex');
+                headerSubtitle.textContent = '12-Session PT Client Tracker (Trainer)';
+                footerControl.innerHTML = `
+                    <span class="text-gray-400">Trainer Mode Active • Share each client's Live Link via WhatsApp</span>
+                `;
+            }
+        }
+
+        function normalizeClientRecord(c) {
+            if (!c.payment) {
+                c.payment = {
+                    status: 'paid',
+                    fee: 6000,
+                    mode: 'UPI / GPay',
+                    date: c.startDate || new Date().toISOString().split('T')[0]
+                };
+            } else {
+                c.payment.status = (c.payment.status === 'paid') ? 'paid' : 'unpaid';
+                c.payment.fee = Number(c.payment.fee) || 0;
+                c.payment.mode = c.payment.mode || 'UPI / GPay';
+                c.payment.date = c.payment.date || c.startDate || '';
+            }
+            if (!Array.isArray(c.sessions) || c.sessions.length !== 12) {
+                c.sessions = Array.from({ length: 12 }, (_, idx) => (c.sessions && c.sessions[idx]) || {
+                    number: idx + 1,
+                    completed: false,
+                    date: idx === 0 ? (c.startDate || '') : '',
+                    inTime: '',
+                    outTime: '',
+                    workout: ''
+                });
+            }
+            return c;
+        }
+
+        // Initialize App with Firebase Cloud Sync + Local Fallback
+        async function initApp() {
+            applyModeLayout();
+            loadLocalClients();
+
+            // Connect to Firebase Firestore if config is available
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    currentUser = auth.currentUser;
+                    isCloudConnected = Boolean(currentUser && db);
+
+                    if (isCloudConnected) {
+                        startCloudSync();
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Cloud sync init error, falling back to local mode:", err);
+                }
+            }
+
+            // Fallback if offline or no cloud config
+            updateConnectionBadge('local', 'Local Mode');
+            if (!isClientView) {
+                ensureSampleClientIfEmpty();
+                activeClientId = clients[0]?.id || null;
+                renderClientList();
+            }
+            renderMainWorkspace();
+        }
+
+        function loadLocalClients() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                try {
+                    clients = JSON.parse(savedData).map(normalizeClientRecord);
+                } catch (e) {
+                    console.error("Failed to parse saved data", e);
+                    clients = [];
+                }
+            }
+        }
+
+        function ensureSampleClientIfEmpty() {
+            if (clients.length === 0) {
+                const today = new Date().toISOString().split('T')[0];
+                const sampleClient = createClientObject(
+                    "Rohan Verma (Sample)",
+                    "9876543210",
+                    today,
+                    "Muscle Gain & Hypertrophy",
+                    {
+                        status: 'paid',
+                        fee: 6000,
+                        mode: 'UPI / GPay',
+                        date: today
+                    }
+                );
+                sampleClient.sessions[0].completed = true;
+                sampleClient.sessions[0].date = today;
+                sampleClient.sessions[0].inTime = "07:00";
+                sampleClient.sessions[0].outTime = "08:05";
+                sampleClient.sessions[0].workout = "Chest & Triceps:\n- Flat Bench Press: 3 sets x 12 reps\n- Incline Dumbbell Press: 3 sets x 10 reps\n- Cable Tricep Pushdown: 3 sets x 15 reps\n- 10 mins Treadmill cooldown";
+                
+                clients.push(sampleClient);
+                saveAllClientsToStorageAndCloud();
+            }
+        }
+
+        function startCloudSync() {
+            if (!db || !currentUser) return;
+            if (unsubscribeCloud) unsubscribeCloud();
+
+            if (isClientView && sharedClientId) {
+                // Client Live Portal: Subscribe ONLY to this specific client's document
+                const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, sharedClientId);
+                unsubscribeCloud = onSnapshot(
+                    clientDocRef,
+                    (docSnap) => {
+                        updateConnectionBadge('live', 'Live Connected');
+                        if (docSnap.exists()) {
+                            singleClientData = normalizeClientRecord({ id: docSnap.id, ...docSnap.data() });
+                        } else {
+                            // Check local cache if opening on same device before sync
+                            const localMatch = clients.find(c => c.id === sharedClientId);
+                            singleClientData = localMatch ? normalizeClientRecord(localMatch) : null;
+                        }
+                        renderMainWorkspace();
+                    },
+                    (error) => {
+                        console.error("Client live stream error:", error);
+                        updateConnectionBadge('local', 'Offline Cache');
+                        const localMatch = clients.find(c => c.id === sharedClientId);
+                        singleClientData = localMatch || null;
+                        renderMainWorkspace();
+                    }
+                );
+            } else {
+                // Trainer Dashboard: Subscribe to all clients in public collection
+                const clientsColRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME);
+                let firstSnapshotHandled = false;
+
+                unsubscribeCloud = onSnapshot(
+                    clientsColRef,
+                    async (snapshot) => {
+                        updateConnectionBadge('live', 'Cloud Synced');
+                        const cloudClients = [];
+                        snapshot.forEach((docSnap) => {
+                            cloudClients.push(normalizeClientRecord({ id: docSnap.id, ...docSnap.data() }));
+                        });
+
+                        // Sort newest first by createdAt or startDate
+                        cloudClients.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                        if (!firstSnapshotHandled) {
+                            firstSnapshotHandled = true;
+                            if (cloudClients.length === 0 && clients.length > 0) {
+                                // Migrate existing local clients to cloud automatically
+                                for (const c of clients) {
+                                    await syncClientToCloud(c);
+                                }
+                                return;
+                            } else if (cloudClients.length === 0 && clients.length === 0) {
+                                ensureSampleClientIfEmpty();
+                                return;
+                            }
+                        }
+
+                        clients = cloudClients;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+
+                        if (!activeClientId || !clients.some(c => c.id === activeClientId)) {
+                            activeClientId = clients[0]?.id || null;
+                        }
+
+                        renderClientList();
+                        // Avoid clobbering active textarea focus while trainer is typing
+                        const activeTag = document.activeElement?.tagName;
+                        if (activeTag !== 'TEXTAREA' && activeTag !== 'INPUT') {
+                            renderMainWorkspace();
+                        }
+                    },
+                    (error) => {
+                        console.error("Trainer cloud sync error:", error);
+                        updateConnectionBadge('local', 'Local Mode');
+                        ensureSampleClientIfEmpty();
+                        activeClientId = clients[0]?.id || null;
+                        renderClientList();
+                        renderMainWorkspace();
+                    }
+                );
+            }
+        }
+
+        async function syncClientToCloud(client) {
+            if (!db || !currentUser || !client || !client.id) return;
+            try {
+                updateConnectionBadge('saving', 'Syncing...');
+                const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, client.id);
+                await setDoc(clientDocRef, JSON.parse(JSON.stringify(client)));
+                updateConnectionBadge('live', 'Cloud Synced');
+            } catch (err) {
+                console.error("Failed to sync client to cloud:", err);
+                updateConnectionBadge('local', 'Saved Locally');
+            }
+        }
+
+        async function deleteClientFromCloud(clientId) {
+            if (!db || !currentUser || !clientId) return;
+            try {
+                const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_NAME, clientId);
+                await deleteDoc(clientDocRef);
+            } catch (err) {
+                console.error("Failed to delete client from cloud:", err);
+            }
+        }
+
+        // Helper to generate fresh 12-session client structure
+        function createClientObject(name, phone, startDate, goal, payment = null) {
+            const sessions = Array.from({ length: 12 }, (_, idx) => ({
+                number: idx + 1,
+                completed: false,
+                date: idx === 0 ? startDate : '',
+                inTime: '',
+                outTime: '',
+                workout: ''
+            }));
+
+            return {
+                id: 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                createdAt: Date.now(),
+                name: name.trim(),
+                phone: phone.replace(/\D/g, '').slice(-10),
+                startDate: startDate,
+                goal: goal,
+                payment: payment || {
+                    status: 'unpaid',
+                    fee: 6000,
+                    mode: 'UPI / GPay',
+                    date: startDate
+                },
+                sessions: sessions
+            };
+        }
+
+        // Save to LocalStorage & Cloud Firestore
+        function saveToStorage(specificClient = null) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+            const targetClient = specificClient || clients.find(c => c.id === activeClientId);
+            if (targetClient && isCloudConnected) {
+                syncClientToCloud(targetClient);
+            } else if (!isCloudConnected) {
+                updateConnectionBadge('local', 'Saved Locally');
+            }
+        }
+
+        async function saveAllClientsToStorageAndCloud() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+            if (isCloudConnected) {
+                for (const c of clients) {
+                    await syncClientToCloud(c);
+                }
+            }
+        }
+
+        // ==========================================
+        // SESSION FIELD UPDATES (TRAINER ONLY)
+        // ==========================================
+        function toggleSessionComplete(sessionIdx, isChecked) {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            client.sessions[sessionIdx].completed = isChecked;
+            if (isChecked && !client.sessions[sessionIdx].date) {
+                client.sessions[sessionIdx].date = new Date().toISOString().split('T')[0];
+            }
+
+            saveToStorage(client);
+            renderClientList();
+            renderMainWorkspace();
+
+            const completedCount = client.sessions.filter(s => s.completed).length;
+            if (completedCount === 12 && isChecked) {
+                showToast(`🏆 All 12 sessions completed for ${client.name}!`, 'success');
+            } else {
+                showToast(`Session #${sessionIdx + 1} marked ${isChecked ? 'Done ✓' : 'Pending'}`);
+            }
+        }
+
+        function updateSessionField(sessionIdx, field, value) {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            client.sessions[sessionIdx][field] = value;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+
+            // Debounce cloud writes while typing workout notes
+            const timerKey = `${client.id}_${sessionIdx}_${field}`;
+            clearTimeout(fieldDebounceTimers[timerKey]);
+            updateConnectionBadge('saving', 'Syncing...');
+            fieldDebounceTimers[timerKey] = setTimeout(() => {
+                saveToStorage(client);
+            }, 500);
+        }
+
+        function fillCurrentTime(sessionIdx, field) {
+            if (isClientView) return;
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hh}:${mm}`;
+
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            client.sessions[sessionIdx][field] = currentTime;
+            if (!client.sessions[sessionIdx].date) {
+                client.sessions[sessionIdx].date = now.toISOString().split('T')[0];
+            }
+
+            saveToStorage(client);
+            renderMainWorkspace();
+            showToast(`Set ${field === 'inTime' ? 'In Time' : 'Out Time'} to ${formatTime12Hour(currentTime)}`);
+        }
+
+        // Toast Notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-emerald-600' : type === 'whatsapp' ? 'bg-gym-whatsapp text-black font-bold' : type === 'error' ? 'bg-red-600' : 'bg-gym-orange';
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-xl text-sm flex items-center gap-2.5 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'whatsapp' ? 'fa-brands fa-whatsapp text-lg' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // ==========================================
+        // RENDER SIDEBAR CLIENT LIST (TRAINER VIEW)
+        // ==========================================
+        function renderClientList() {
+            if (isClientView) return;
+            const listEl = document.getElementById('client-list');
+            const countBadge = document.getElementById('client-count-badge');
+            const searchQuery = document.getElementById('search-client').value.toLowerCase();
+
+            const filteredClients = clients.filter(c => 
+                c.name.toLowerCase().includes(searchQuery) || 
+                c.phone.includes(searchQuery)
+            );
+
+            countBadge.textContent = clients.length;
+
+            if (filteredClients.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-6 text-gray-500 text-xs w-full">No clients found.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = filteredClients.map(client => {
+                const completedCount = client.sessions.filter(s => s.completed).length;
+                const isActive = client.id === activeClientId;
+                const isDone = completedCount === 12;
+                const isPaid = client.payment && client.payment.status === 'paid';
+
+                return `
+                    <button onclick="selectClient('${client.id}')" 
+                        class="min-w-[225px] lg:min-w-0 w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2
+                        ${isActive 
+                            ? 'bg-gym-orange/15 border-gym-orange text-white shadow-md shadow-gym-orange/10' 
+                            : 'bg-gym-bg/60 border-gym-border text-gray-300 hover:bg-gym-surface hover:border-gray-600'}">
+                        <div class="truncate">
+                            <div class="font-bold text-sm truncate flex items-center gap-1.5">
+                                ${escapeHtml(client.name)}
+                                ${isDone ? '<i class="fa-solid fa-trophy text-yellow-400 text-xs" title="12/12 Completed"></i>' : ''}
+                            </div>
+                            <div class="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wide ${isPaid ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+                                    <span class="w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+                                    ${isPaid ? 'ACTIVE • PAID' : 'UNPAID'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="shrink-0 flex flex-col items-end">
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-md ${isDone ? 'bg-emerald-500/20 text-emerald-400' : isActive ? 'bg-gym-orange text-white' : 'bg-gym-surface text-gray-300'}">
+                                ${completedCount}/12
+                            </span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectClient(id) {
+            if (isClientView) return;
+            activeClientId = id;
+            renderClientList();
+            renderMainWorkspace();
+        }
+
+        // ==========================================
+        // RENDER MAIN WORKSPACE (TRAINER VS CLIENT LIVE PORTAL)
+        // ==========================================
+        function renderMainWorkspace() {
+            const workspace = document.getElementById('main-workspace');
+            const client = isClientView ? singleClientData : clients.find(c => c.id === activeClientId);
+
+            if (!client) {
+                if (isClientView) {
+                    workspace.innerHTML = `
+                        <div class="bg-gym-card border border-gym-border rounded-2xl p-10 text-center flex flex-col items-center justify-center max-w-lg mx-auto my-8">
+                            <div class="w-16 h-16 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center text-3xl mb-4">
+                                <i class="fa-solid fa-link-slash"></i>
+                            </div>
+                            <h2 class="font-display font-bold text-xl mb-2">Client Profile Not Found</h2>
+                            <p class="text-gray-400 text-sm mb-6">This tracking link may be invalid or still syncing. Please ask your Optimum Fitness trainer to share your updated Live Portal link.</p>
+                            <button onclick="openTrainerPinModal()" class="px-4 py-2 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 text-xs font-semibold">
+                                Trainer Login
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    workspace.innerHTML = `
+                        <div class="bg-gym-card border border-gym-border rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+                            <div class="w-16 h-16 rounded-2xl bg-gym-surface text-gym-orange flex items-center justify-center text-3xl mb-4">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <h2 class="font-display font-bold text-xl mb-2">No Client Selected</h2>
+                            <p class="text-gray-400 text-sm max-w-md mb-6">Add your first personal training client to start tracking their 12-session schedule, workouts, and live client link.</p>
+                            <button onclick="openAddClientModal()" class="px-5 py-3 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white font-bold text-sm transition">
+                                <i class="fa-solid fa-user-plus mr-2"></i> Add New Client
+                            </button>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            const completedCount = client.sessions.filter(s => s.completed).length;
+            const remainingCount = 12 - completedCount;
+            const progressPercent = Math.round((completedCount / 12) * 100);
+            const isAllCompleted = completedCount === 12;
+
+            const payment = client.payment || { status: 'unpaid', fee: 0, mode: 'UPI / GPay', date: '' };
+            const isPaid = payment.status === 'paid';
+
+            workspace.innerHTML = `
+                <!-- Client Live Portal: Add to Home Screen Banner -->
+                ${isClientView ? `
+                    <div class="bg-gradient-to-r from-gym-orange/20 via-gym-card to-gym-card border border-gym-orange/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                        <div class="flex items-start sm:items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gym-orange text-white flex items-center justify-center text-lg shrink-0 shadow-md shadow-gym-orange/30">
+                                <i class="fa-solid fa-mobile-screen-button"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-bold text-sm sm:text-base text-white">Save Your Live Tracker to Home Screen</h3>
+                                <p class="text-xs text-gray-300 mt-0.5">Whenever your trainer updates a session, workout, or payment, it appears here automatically in real time!</p>
+                            </div>
+                        </div>
+                        <button onclick="openHomeScreenModal()" class="shrink-0 px-4 py-2.5 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white font-bold text-xs shadow-lg shadow-gym-orange/20 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-plus-square"></i> How to Add to Home Screen
+                        </button>
+                    </div>
+                ` : ''}
+
+                <!-- Client Header Summary Card -->
+                <div class="bg-gym-card border border-gym-border rounded-2xl p-5 sm:p-6 shadow-xl">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-gym-border">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <h2 class="font-display font-black text-2xl sm:text-3xl text-white">${escapeHtml(client.name)}</h2>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-gym-orange/15 text-gym-orange border border-gym-orange/30">
+                                    ${escapeHtml(client.goal)}
+                                </span>
+                                <!-- Active / Unpaid Status Badge -->
+                                ${isPaid 
+                                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/40">
+                                        <i class="fa-solid fa-circle-check"></i> ACTIVE • PAID
+                                       </span>`
+                                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-red-500/15 text-red-400 border border-red-500/40 animate-pulse">
+                                        <i class="fa-solid fa-circle-xmark"></i> UNPAID • INACTIVE
+                                       </span>`
+                                }
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-400 mt-2">
+                                <span><i class="fa-brands fa-whatsapp text-gym-whatsapp mr-1"></i> +91 ${client.phone}</span>
+                                <span><i class="fa-regular fa-calendar text-gym-orange mr-1"></i> Started: <strong class="text-gray-200">${formatDisplayDate(client.startDate)}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Top Client Actions (Trainer Only) -->
+                        ${!isClientView ? `
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="shareLivePortalLinkWhatsApp()" class="px-4 py-2.5 rounded-xl bg-gym-orange hover:bg-gym-orangeHover text-white font-bold text-xs sm:text-sm shadow-lg shadow-gym-orange/25 transition flex items-center gap-2">
+                                    <i class="fa-solid fa-tower-broadcast"></i>
+                                    <span>Share Live Portal Link</span>
+                                </button>
+                                <button onclick="shareFullReportWhatsApp()" class="px-3.5 py-2.5 rounded-xl bg-gym-whatsapp hover:bg-gym-whatsappHover text-black font-bold text-xs sm:text-sm shadow-lg shadow-gym-whatsapp/20 transition flex items-center gap-2">
+                                    <i class="fa-brands fa-whatsapp text-base"></i>
+                                    <span>Full Report</span>
+                                </button>
+                                <button onclick="openEditClientModal('${client.id}')" title="Edit Client & Payment" class="p-2.5 rounded-xl bg-gym-surface hover:bg-gray-700 text-gray-300 hover:text-white border border-gym-border transition">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="confirmDeleteClient('${client.id}')" title="Delete Client" class="p-2.5 rounded-xl bg-gym-surface hover:bg-red-900/40 text-gray-400 hover:text-red-400 border border-gym-border transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Payment Status & Quick Activate Strip -->
+                    <div class="py-4 border-b border-gym-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-3 sm:gap-5">
+                            <div>
+                                <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold block">Package Fee</span>
+                                <span class="font-display font-extrabold text-base sm:text-lg text-white">₹${Number(payment.fee).toLocaleString('en-IN')}</span>
+                            </div>
+                            <div class="h-7 w-px bg-gym-border hidden sm:block"></div>
+                            <div>
+                                <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold block">Payment Status</span>
+                                <span class="text-xs sm:text-sm font-extrabold ${isPaid ? 'text-emerald-400' : 'text-red-400'}">
+                                    ${isPaid ? 'PAID (PT Activated)' : 'UNPAID (Pending)'}
+                                </span>
+                            </div>
+                            <div class="h-7 w-px bg-gym-border hidden sm:block"></div>
+                            <div>
+                                <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold block">${isPaid ? 'Paid Via & Date' : 'Due Date'}</span>
+                                <span class="text-xs text-gray-300 font-medium">
+                                    ${isPaid ? `${escapeHtml(payment.mode)}${payment.date ? ' • ' + formatDisplayDate(payment.date) : ''}` : (payment.date ? formatDisplayDate(payment.date) : 'Immediate')}
+                                </span>
+                            </div>
+                        </div>
+
+                        ${!isClientView ? `
+                            <div class="flex flex-wrap items-center gap-2">
+                                ${isPaid 
+                                    ? `<button onclick="toggleClientPaymentStatus()" title="Switch back to Unpaid" class="px-3.5 py-2 rounded-xl bg-gym-surface hover:bg-red-500/20 text-gray-300 hover:text-red-400 border border-gym-border hover:border-red-500/40 text-xs font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-rotate-left"></i> Mark Unpaid
+                                       </button>`
+                                    : `<button onclick="toggleClientPaymentStatus()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-bolt"></i> Mark as Paid (Activate)
+                                       </button>`
+                                }
+
+                                <button onclick="sharePaymentWhatsApp()" class="px-3.5 py-2 rounded-xl ${isPaid ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30'} text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                                    <span>${isPaid ? 'Send Receipt' : 'Send Fee Reminder'}</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Progress Bar Section -->
+                    <div class="pt-4">
+                        <div class="flex items-center justify-between text-xs sm:text-sm font-semibold mb-2">
+                            <span class="text-gray-300">Package Progress: <strong class="text-white">${completedCount} / 12 Sessions Completed</strong></span>
+                            <span class="${isAllCompleted ? 'text-emerald-400' : 'text-gym-orange'} font-bold">${progressPercent}% (${remainingCount} Left)</span>
+                        </div>
+                        <div class="w-full h-3 bg-gym-bg rounded-full overflow-hidden border border-gym-border p-0.5">
+                            <div class="h-full rounded-full transition-all duration-500 ${isAllCompleted ? 'bg-gradient-to-r from-emerald-500 to-green-400' : 'bg-gradient-to-r from-gym-orange to-amber-500'}" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unpaid Warning Banner (Only visible when Payment Status is Unpaid) -->
+                ${!isPaid ? `
+                    <div class="bg-red-950/35 border border-red-500/50 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                        <div class="flex items-start sm:items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-extrabold text-base text-red-300">Payment Unpaid — Account Inactive</h3>
+                                <p class="text-xs sm:text-sm text-gray-300 mt-0.5">
+                                    ${isClientView 
+                                        ? `Your package fee of <strong class="text-white">₹${Number(payment.fee).toLocaleString('en-IN')}</strong> is currently unpaid. Please complete payment with your trainer to activate your PT plan.`
+                                        : `Package fee of <strong class="text-white">₹${Number(payment.fee).toLocaleString('en-IN')}</strong> is unpaid. Mark as Paid to activate this client's 12-session plan.`
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        ${!isClientView ? `
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="sharePaymentWhatsApp()" class="px-3.5 py-2.5 rounded-xl bg-gym-surface hover:bg-gray-700 text-white border border-gym-border text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-brands fa-whatsapp text-gym-whatsapp text-sm"></i> Remind Client
+                                </button>
+                                <button onclick="toggleClientPaymentStatus()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-check"></i> Mark as Paid (Activate)
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                <!-- 12th Session Celebration, Motivation Quote & Renewal Banner (Shows when 12/12 ticked) -->
+                ${isAllCompleted ? renderCompletionBanner(client) : ''}
+
+                <!-- 12 Sessions Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${client.sessions.map((session, idx) => renderSessionCard(client, session, idx)).join('')}
+                </div>
+            `;
+        }
+
+        // Render Celebration & Renewal Card when all 12 sessions are completed
+        function renderCompletionBanner(client) {
+            const currentQuote = MOTIVATION_QUOTES[selectedQuoteIndex];
+            return `
+                <div class="bg-gradient-to-br from-gym-card via-[#221a14] to-gym-card border-2 border-gym-orange rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-2 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+                                <i class="fa-solid fa-trophy text-yellow-400"></i> 12/12 Sessions Completed!
+                            </div>
+                            <h3 class="font-display font-black text-xl sm:text-2xl text-white">
+                                Congratulations ${escapeHtml(client.name)}! Time for Package Renewal 🔥
+                            </h3>
+                            
+                            <!-- Motivational Quote Box -->
+                            <div class="bg-gym-bg/80 border-l-4 border-gym-orange p-3.5 rounded-r-xl mt-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm italic text-gray-200">"${currentQuote}"</p>
+                                    <button onclick="cycleQuote()" title="Change Quote" class="shrink-0 text-xs text-gym-orange hover:underline flex items-center gap-1 font-semibold">
+                                        <i class="fa-solid fa-rotate"></i> Next Quote
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p class="text-xs sm:text-sm text-gray-300 pt-1">
+                                <i class="fa-solid fa-bell text-gym-orange mr-1"></i> <strong>Renewal Reminder:</strong> Your 12-session PT package is complete. Renew now to keep your transformation streak unbroken!
+                            </p>
+                        </div>
+
+                        ${!isClientView ? `
+                            <div class="flex flex-col gap-2.5 shrink-0">
+                                <button onclick="shareRenewalWhatsApp()" class="px-5 py-3.5 rounded-xl bg-gym-whatsapp hover:bg-gym-whatsappHover text-black font-extrabold text-sm shadow-lg shadow-gym-whatsapp/25 transition flex items-center justify-center gap-2">
+                                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                                    <span>Send Quote & Renewal</span>
+                                </button>
+                                <button onclick="startNext12SessionsPackage()" class="px-4 py-2.5 rounded-xl bg-gym-surface hover:bg-gym-orange text-white font-semibold text-xs border border-gym-border transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                    <span>Renew & Reset Next 12 Sessions</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function cycleQuote() {
+            selectedQuoteIndex = (selectedQuoteIndex + 1) % MOTIVATION_QUOTES.length;
+            renderMainWorkspace();
+        }
+
+        // Render Individual Session Card (Editable for Trainer, Read-Only for Client Live Portal)
+        function renderSessionCard(client, session, idx) {
+            const isCompleted = session.completed;
+
+            if (isClientView) {
+                const dateDisplay = session.date ? formatDisplayDate(session.date) : 'Date Not Scheduled Yet';
+                const timeDisplay = (session.inTime || session.outTime)
+                    ? `${session.inTime ? formatTime12Hour(session.inTime) : '--:--'} to ${session.outTime ? formatTime12Hour(session.outTime) : '--:--'}`
+                    : 'Timing not logged yet';
+
+                return `
+                    <div class="bg-gym-card border ${isCompleted ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-950/15 to-gym-card' : 'border-gym-border'} rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-3.5">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-gym-border">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded-lg font-display font-black text-sm flex items-center justify-center ${isCompleted ? 'bg-emerald-500 text-black' : 'bg-gym-surface text-gym-orange border border-gym-border'}">
+                                        #${session.number}
+                                    </span>
+                                    <div>
+                                        <h4 class="font-display font-bold text-base text-white">Session ${session.number}</h4>
+                                        <span class="text-[11px] font-semibold ${isCompleted ? 'text-emerald-400' : 'text-gray-500'}">
+                                            ${isCompleted ? 'Completed ✓' : 'Upcoming / Pending'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <span class="px-3 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1.5 ${isCompleted ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300' : 'bg-gym-bg border border-gym-border text-gray-400'}">
+                                    <i class="fa-solid ${isCompleted ? 'fa-circle-check text-emerald-400' : 'fa-clock text-gray-500'}"></i>
+                                    ${isCompleted ? 'Done' : 'Pending'}
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5 mb-3 text-xs">
+                                <div class="bg-gym-bg/80 border border-gym-border rounded-xl p-2.5">
+                                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold block mb-0.5">Date</span>
+                                    <span class="text-gray-200 font-semibold"><i class="fa-regular fa-calendar text-gym-orange mr-1"></i> ${dateDisplay}</span>
+                                </div>
+                                <div class="bg-gym-bg/80 border border-gym-border rounded-xl p-2.5">
+                                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold block mb-0.5">In / Out Time</span>
+                                    <span class="text-gray-200 font-semibold"><i class="fa-regular fa-clock text-gym-orange mr-1"></i> ${timeDisplay}</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-gym-bg/80 border border-gym-border rounded-xl p-3">
+                                <span class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold block mb-1">Workout Summary</span>
+                                <p class="text-xs sm:text-sm text-gray-200 whitespace-pre-line leading-relaxed">
+                                    ${session.workout.trim() ? escapeHtml(session.workout.trim()) : '<span class="text-gray-500 italic">Workout notes will appear here after your session.</span>'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Trainer Editable Card
+            return `
+                <div class="bg-gym-card border ${isCompleted ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-950/10 to-gym-card' : 'border-gym-border'} rounded-2xl p-4 sm:p-5 transition hover:border-gray-600 flex flex-col justify-between gap-4">
+                    
+                    <!-- Card Top Header: Session Number & Completion Tick -->
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-gym-border">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-8 h-8 rounded-lg font-display font-black text-sm flex items-center justify-center ${isCompleted ? 'bg-emerald-500 text-black' : 'bg-gym-surface text-gym-orange border border-gym-border'}">
+                                    #${session.number}
+                                </span>
+                                <div>
+                                    <h4 class="font-display font-bold text-base text-white">Session ${session.number}</h4>
+                                    <span class="text-[11px] font-semibold ${isCompleted ? 'text-emerald-400' : 'text-gray-500'}">
+                                        ${isCompleted ? 'Completed ✓' : 'Pending'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Tick Checkbox Toggle -->
+                            <label class="cursor-pointer select-none flex items-center gap-2 px-3 py-1.5 rounded-xl border transition ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-gym-bg border-gym-border text-gray-400 hover:border-gym-orange'}">
+                                <input type="checkbox" ${isCompleted ? 'checked' : ''} onchange="toggleSessionComplete(${idx}, this.checked)" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+                                <span class="text-xs font-bold">${isCompleted ? 'Done' : 'Mark Done'}</span>
+                            </label>
+                        </div>
+
+                        <!-- Date, In-Time & Out-Time Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                            <!-- Date -->
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-400 mb-1">Date</label>
+                                <input type="date" value="${session.date}" onchange="updateSessionField(${idx}, 'date', this.value)"
+                                    class="w-full bg-gym-bg border border-gym-border rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-gym-orange">
+                            </div>
+
+                            <!-- In-Time -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-[11px] font-semibold text-gray-400">In Time</label>
+                                    <button type="button" onclick="fillCurrentTime(${idx}, 'inTime')" class="text-[10px] text-gym-orange hover:underline font-bold">Now</button>
+                                </div>
+                                <input type="time" value="${session.inTime}" onchange="updateSessionField(${idx}, 'inTime', this.value)"
+                                    class="w-full bg-gym-bg border border-gym-border rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-gym-orange">
+                            </div>
+
+                            <!-- Out-Time -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-[11px] font-semibold text-gray-400">Out Time</label>
+                                    <button type="button" onclick="fillCurrentTime(${idx}, 'outTime')" class="text-[10px] text-gym-orange hover:underline font-bold">Now</button>
+                                </div>
+                                <input type="time" value="${session.outTime}" onchange="updateSessionField(${idx}, 'outTime', this.value)"
+                                    class="w-full bg-gym-bg border border-gym-border rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-gym-orange">
+                            </div>
+                        </div>
+
+                        <!-- Workout Details Textarea -->
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Workout Done (Exercises / Sets / Cardio)</label>
+                            <textarea rows="3" placeholder="e.g. Back & Biceps: Lat Pulldown 3x12, Barbell Row 3x10, Bicep Curls..."
+                                oninput="updateSessionField(${idx}, 'workout', this.value)"
+                                class="w-full bg-gym-bg border border-gym-border rounded-xl p-2.5 text-xs sm:text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gym-orange resize-y">${escapeHtml(session.workout)}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer: WhatsApp Share Single Session -->
+                    <div class="pt-2 flex items-center justify-between gap-2">
+                        <button onclick="shareSingleSessionWhatsApp(${idx})" class="w-full py-2.5 px-3 rounded-xl bg-gym-surface hover:bg-gym-whatsapp hover:text-black text-gray-200 border border-gym-border hover:border-gym-whatsapp font-semibold text-xs transition flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-sm text-gym-whatsapp group-hover:text-black"></i>
+                            <span>Send Session #${session.number} on WhatsApp</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // SHARE CLIENT LIVE PORTAL LINK VIA WHATSAPP
+        // ==========================================
+        function getClientLiveUrl(clientId) {
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.hash = '';
+            url.searchParams.set('client', clientId);
+            return url.toString();
+        }
+
+        function copyTextToClipboard(text) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                console.error('Copy failed', e);
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        function shareLivePortalLinkWhatsApp() {
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            const liveUrl = getClientLiveUrl(client.id);
+            copyTextToClipboard(liveUrl);
+
+            const payment = client.payment || { status: 'unpaid' };
+            const isPaid = payment.status === 'paid';
+
+            let msg = `🏋️‍♂️ *OPTIMUM FITNESS - YOUR LIVE 12-SESSION PT TRACKER*\n\n`;
+            msg += `Hi *${client.name}*! 👋\n`;
+            msg += `Here is your personal *Live PT Tracking Link* where you can see your completed sessions, workouts, In/Out timings, and membership status updated in real time:\n\n`;
+            msg += `🔗 *Open Your Live Tracker:*\n${liveUrl}\n\n`;
+            msg += `📲 *Tip (Save as App):*\nOpen the link in Chrome/Safari and tap *"Add to Home Screen"* so you can check your progress anytime with one tap!\n\n`;
+            msg += `📋 *Plan Status:* ${isPaid ? 'ACTIVE • PAID ✅' : 'UNPAID • INACTIVE ⚠️'}`;
+
+            openWhatsAppUrl(client.phone, msg);
+            showToast(`Live Portal link copied & opening WhatsApp for ${client.name}!`, 'whatsapp');
+        }
+
+        // ==========================================
+        // PAYMENT STATUS TOGGLE & WHATSAPP RECEIPT/REMINDER
+        // ==========================================
+        function toggleClientPaymentStatus() {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            if (!client.payment) {
+                client.payment = { status: 'unpaid', fee: 6000, mode: 'UPI / GPay', date: '' };
+            }
+
+            const becomingPaid = client.payment.status !== 'paid';
+            client.payment.status = becomingPaid ? 'paid' : 'unpaid';
+            if (becomingPaid && !client.payment.date) {
+                client.payment.date = new Date().toISOString().split('T')[0];
+            }
+
+            saveToStorage(client);
+            renderClientList();
+            renderMainWorkspace();
+
+            if (becomingPaid) {
+                showToast(`✅ Payment received! ${client.name}'s PT plan is now ACTIVE.`);
+            } else {
+                showToast(`⚠️ Status changed to UNPAID (Inactive) for ${client.name}.`);
+            }
+        }
+
+        function sharePaymentWhatsApp() {
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            const payment = client.payment || { status: 'unpaid', fee: 0, mode: 'UPI / GPay', date: '' };
+            const isPaid = payment.status === 'paid';
+            const feeFormatted = `₹${Number(payment.fee).toLocaleString('en-IN')}`;
+            const completedCount = client.sessions.filter(s => s.completed).length;
+            const liveUrl = getClientLiveUrl(client.id);
+
+            let msg = '';
+            if (isPaid) {
+                msg += `✅ *OPTIMUM FITNESS - ACTIVE MEMBERSHIP & PAYMENT RECEIPT*\n\n`;
+                msg += `👤 *Client:* ${client.name}\n`;
+                msg += `🟢 *Status:* ACTIVE • PAID\n`;
+                msg += `💰 *Package Fee Paid:* ${feeFormatted}\n`;
+                msg += `💳 *Payment Mode:* ${payment.mode}\n`;
+                if (payment.date) {
+                    msg += `📅 *Paid Date:* ${formatDisplayDate(payment.date)}\n`;
+                }
+                msg += `📋 *PT Plan:* 12 Personal Training Sessions (${completedCount}/12 Completed)\n\n`;
+                msg += `🔗 *Track Live Progress:* ${liveUrl}\n\n`;
+                msg += `Thank you for your payment! Your 12-session PT package is active. Let's crush your ${client.goal} goals! 💪🔥`;
+            } else {
+                msg += `🔔 *OPTIMUM FITNESS - PT PAYMENT REMINDER*\n\n`;
+                msg += `Hi *${client.name}*,\n`;
+                msg += `Your 12-Session Personal Training package status is currently *UNPAID (Inactive)*.\n\n`;
+                msg += `💰 *Amount Due:* ${feeFormatted}\n`;
+                if (payment.date) {
+                    msg += `📅 *Due Date:* ${formatDisplayDate(payment.date)}\n`;
+                }
+                msg += `🎯 *Goal:* ${client.goal}\n\n`;
+                msg += `Please complete the payment of *${feeFormatted}* to activate your 12-session PT plan. Thank you! 🏋️‍♂️`;
+            }
+
+            openWhatsAppUrl(client.phone, msg);
+            showToast(isPaid ? `Sending active receipt to ${client.name}...` : `Sending fee reminder to ${client.name}...`, 'whatsapp');
+        }
+
+        // ==========================================
+        // WHATSAPP SHARING FUNCTIONS
+        // ==========================================
+        function openWhatsAppUrl(phone, message) {
+            const cleanPhone = phone.replace(/\D/g, '');
+            const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+            const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        }
+
+        // 1. Send Single Session Update on WhatsApp
+        function shareSingleSessionWhatsApp(sessionIdx) {
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            const session = client.sessions[sessionIdx];
+            const completedCount = client.sessions.filter(s => s.completed).length;
+            const remaining = 12 - completedCount;
+            const liveUrl = getClientLiveUrl(client.id);
+
+            const dateText = session.date ? formatDisplayDate(session.date) : 'Not set';
+            const inText = session.inTime ? formatTime12Hour(session.inTime) : '--:--';
+            const outText = session.outTime ? formatTime12Hour(session.outTime) : '--:--';
+            const workoutText = session.workout.trim() ? session.workout.trim() : 'General Workout / Training';
+
+            let msg = `🏋️‍♂️ *OPTIMUM FITNESS - PT SESSION UPDATE*\n\n`;
+            msg += `👤 *Client:* ${client.name}\n`;
+            msg += `📋 *Session:* #${session.number} of 12 (${session.completed ? 'Completed ✅' : 'Scheduled ⏳'})\n`;
+            msg += `📅 *Date:* ${dateText}\n`;
+            msg += `⏰ *Time:* ${inText} to ${outText}\n\n`;
+            msg += `💪 *Today's Workout:*\n${workoutText}\n\n`;
+            msg += `📊 *Progress:* ${completedCount}/12 Completed (${remaining} sessions left)\n`;
+            msg += `🔗 *Live Tracker:* ${liveUrl}\n`;
+
+            if (completedCount === 12) {
+                const quote = MOTIVATION_QUOTES[selectedQuoteIndex];
+                msg += `\n🏆 *CONGRATULATIONS ON COMPLETING ALL 12 SESSIONS!*\n`;
+                msg += `💬 _"${quote}"_\n\n`;
+                msg += `🔔 *Renewal Reminder:* Your 12-session PT package is now complete. Let's renew your next package to keep your fitness progress going strong! 💪🔥`;
+            } else {
+                msg += `\nKeep pushing! See you in the next session! 🔥`;
+            }
+
+            openWhatsAppUrl(client.phone, msg);
+            showToast(`Opening WhatsApp for ${client.name}...`, 'whatsapp');
+        }
+
+        // 2. Send Full 12-Session Summary Report on WhatsApp
+        function shareFullReportWhatsApp() {
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            const completedCount = client.sessions.filter(s => s.completed).length;
+            const remaining = 12 - completedCount;
+            const payment = client.payment || { status: 'unpaid', fee: 0, mode: 'UPI / GPay', date: '' };
+            const isPaid = payment.status === 'paid';
+            const liveUrl = getClientLiveUrl(client.id);
+
+            let msg = `🏋️‍♂️ *OPTIMUM FITNESS - 12-SESSION PT REPORT*\n\n`;
+            msg += `👤 *Client:* ${client.name}\n`;
+            msg += `🎯 *Goal:* ${client.goal}\n`;
+            msg += `🗓️ *Start Date:* ${formatDisplayDate(client.startDate)}\n`;
+            msg += `💳 *Payment Status:* ${isPaid ? `PAID • ACTIVE (₹${Number(payment.fee).toLocaleString('en-IN')})` : `UNPAID • INACTIVE (₹${Number(payment.fee).toLocaleString('en-IN')} Due)`}\n`;
+            msg += `📊 *Progress:* ${completedCount}/12 Sessions Completed (${remaining} Remaining)\n`;
+            msg += `🔗 *Live Tracker Link:* ${liveUrl}\n\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+
+            client.sessions.forEach(s => {
+                const statusIcon = s.completed ? '✅' : '⬜';
+                const dateStr = s.date ? formatDisplayDate(s.date) : 'Pending';
+                const timeStr = (s.inTime || s.outTime) 
+                    ? ` (${s.inTime ? formatTime12Hour(s.inTime) : '?'} - ${s.outTime ? formatTime12Hour(s.outTime) : '?'})` 
+                    : '';
+                const workoutSummary = s.workout.trim() 
+                    ? `\n   └ 💪 ${s.workout.trim().replace(/\n/g, ', ')}` 
+                    : '';
+
+                msg += `${statusIcon} *Session ${s.number}:* ${dateStr}${timeStr}${workoutSummary}\n`;
+            });
+
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+
+            if (completedCount === 12) {
+                const quote = MOTIVATION_QUOTES[selectedQuoteIndex];
+                msg += `\n🏆 *12/12 SESSIONS COMPLETED!*\n`;
+                msg += `💬 _"${quote}"_\n\n`;
+                msg += `🔔 *Renewal Reminder:* Your current 12-session package is complete. Reply to renew your next 12 sessions! 🔥`;
+            } else {
+                msg += `\nStay consistent & strong! 💪🔥`;
+            }
+
+            openWhatsAppUrl(client.phone, msg);
+            showToast(`Sending full report to ${client.name}...`, 'whatsapp');
+        }
+
+        // 3. Send Dedicated 12th Session Motivation Quote & Renewal Reminder
+        function shareRenewalWhatsApp() {
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            const quote = MOTIVATION_QUOTES[selectedQuoteIndex];
+
+            let msg = `🏆 *CONGRATULATIONS ${client.name.toUpperCase()}!* 🎉\n\n`;
+            msg += `You have successfully completed all *12/12 Personal Training Sessions* at *Optimum Fitness*! 💪🔥\n\n`;
+            msg += `✨ *Motivation for You:*\n_"${quote}"_\n\n`;
+            msg += `🔔 *PT Package Renewal Reminder:*\nYour current 12-session package has ended today. Don't let your hard-earned momentum slow down! Let's renew your next *12-Session Package* so we can continue leveling up your ${client.goal} journey.\n\n`;
+            msg += `Reply *YES* to book your next cycle! 🏋️‍♂️`;
+
+            openWhatsAppUrl(client.phone, msg);
+            showToast(`Sending Motivation & Renewal reminder!`, 'whatsapp');
+        }
+
+        // ==========================================
+        // CLIENT ADD / EDIT / DELETE / RENEW MODALS
+        // ==========================================
+        function updatePaymentDateLabel() {
+            const isPaid = document.getElementById('status-paid').checked;
+            document.getElementById('payment-date-label').textContent = isPaid ? 'Paid Date' : 'Due Date';
+        }
+
+        function openAddClientModal() {
+            if (isClientView) return;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('modal-title').innerHTML = `Add New <span class="text-gym-orange">PT Client</span>`;
+            document.getElementById('edit-client-id').value = '';
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-start-date').value = today;
+            document.getElementById('client-goal').value = 'Fat Loss & Conditioning';
+            
+            document.getElementById('status-paid').checked = true;
+            document.getElementById('client-fee').value = '6000';
+            document.getElementById('client-payment-mode').value = 'UPI / GPay';
+            document.getElementById('client-payment-date').value = today;
+            updatePaymentDateLabel();
+
+            document.getElementById('client-modal').classList.remove('hidden');
+        }
+
+        function openEditClientModal(id) {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === id);
+            if (!client) return;
+
+            const payment = client.payment || { status: 'unpaid', fee: 6000, mode: 'UPI / GPay', date: client.startDate };
+
+            document.getElementById('modal-title').innerHTML = `Edit <span class="text-gym-orange">Client & Payment</span>`;
+            document.getElementById('edit-client-id').value = client.id;
+            document.getElementById('client-name').value = client.name;
+            document.getElementById('client-phone').value = client.phone;
+            document.getElementById('client-start-date').value = client.startDate;
+            document.getElementById('client-goal').value = client.goal;
+
+            if (payment.status === 'paid') {
+                document.getElementById('status-paid').checked = true;
+            } else {
+                document.getElementById('status-unpaid').checked = true;
+            }
+            document.getElementById('client-fee').value = payment.fee;
+            document.getElementById('client-payment-mode').value = payment.mode || 'UPI / GPay';
+            document.getElementById('client-payment-date').value = payment.date || '';
+            updatePaymentDateLabel();
+
+            document.getElementById('client-modal').classList.remove('hidden');
+        }
+
+        function closeClientModal() {
+            document.getElementById('client-modal').classList.add('hidden');
+        }
+
+        function saveClientForm(e) {
+            e.preventDefault();
+            if (isClientView) return;
+            const editId = document.getElementById('edit-client-id').value;
+            const name = document.getElementById('client-name').value;
+            const phone = document.getElementById('client-phone').value;
+            const startDate = document.getElementById('client-start-date').value;
+            const goal = document.getElementById('client-goal').value;
+
+            const paymentStatus = document.getElementById('status-paid').checked ? 'paid' : 'unpaid';
+            const paymentFee = Number(document.getElementById('client-fee').value) || 0;
+            const paymentMode = document.getElementById('client-payment-mode').value;
+            const paymentDate = document.getElementById('client-payment-date').value;
+
+            const paymentObj = {
+                status: paymentStatus,
+                fee: paymentFee,
+                mode: paymentMode,
+                date: paymentDate
+            };
+
+            let savedClient = null;
+            if (editId) {
+                const client = clients.find(c => c.id === editId);
+                if (client) {
+                    client.name = name.trim();
+                    client.phone = phone.replace(/\D/g, '').slice(-10);
+                    client.startDate = startDate;
+                    client.goal = goal;
+                    client.payment = paymentObj;
+                    savedClient = client;
+                    showToast(`Updated ${client.name} (${paymentStatus === 'paid' ? 'ACTIVE • PAID' : 'UNPAID'})`);
+                }
+            } else {
+                const newClient = createClientObject(name, phone, startDate, goal, paymentObj);
+                clients.unshift(newClient);
+                activeClientId = newClient.id;
+                savedClient = newClient;
+                showToast(`Added ${newClient.name} (${paymentStatus === 'paid' ? 'ACTIVE • PAID' : 'UNPAID'})`);
+            }
+
+            saveToStorage(savedClient);
+            closeClientModal();
+            renderClientList();
+            renderMainWorkspace();
+        }
+
+        // Custom Confirm Modal Logic
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            closeConfirmModal();
+        });
+
+        function confirmDeleteClient(id) {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === id);
+            if (!client) return;
+
+            showConfirm(
+                `Delete ${client.name}?`,
+                `All 12 session records for ${client.name} will be permanently removed from cloud & this device.`,
+                async () => {
+                    clients = clients.filter(c => c.id !== id);
+                    activeClientId = clients.length > 0 ? clients[0].id : null;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+                    await deleteClientFromCloud(id);
+                    renderClientList();
+                    renderMainWorkspace();
+                    showToast(`Deleted ${client.name}`);
+                }
+            );
+        }
+
+        // Renew & Reset for Next 12 Sessions Package
+        function startNext12SessionsPackage() {
+            if (isClientView) return;
+            const client = clients.find(c => c.id === activeClientId);
+            if (!client) return;
+
+            showConfirm(
+                `Renew Package for ${client.name}?`,
+                `This will reset all 12 sessions for a fresh cycle starting today and set payment status to UNPAID until the renewal fee is collected.`,
+                () => {
+                    const today = new Date().toISOString().split('T')[0];
+                    client.startDate = today;
+                    if (!client.payment) {
+                        client.payment = { status: 'unpaid', fee: 6000, mode: 'UPI / GPay', date: today };
+                    } else {
+                        client.payment.status = 'unpaid';
+                        client.payment.date = today;
+                    }
+                    client.sessions = Array.from({ length: 12 }, (_, idx) => ({
+                        number: idx + 1,
+                        completed: false,
+                        date: idx === 0 ? today : '',
+                        inTime: '',
+                        outTime: '',
+                        workout: ''
+                    }));
+                    saveToStorage(client);
+                    renderClientList();
+                    renderMainWorkspace();
+                    showToast(`Renewed! Mark as Paid once ${client.name} completes payment.`);
+                }
+            );
+        }
+
+        // ==========================================
+        // TRAINER PIN & CLIENT PORTAL MODALS
+        // ==========================================
+        function openTrainerPinModal() {
+            document.getElementById('trainer-pin-input').value = '';
+            document.getElementById('trainer-pin-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('trainer-pin-input').focus(), 100);
+        }
+
+        function closeTrainerPinModal() {
+            document.getElementById('trainer-pin-modal').classList.add('hidden');
+        }
+
+        function verifyTrainerPin(e) {
+            e.preventDefault();
+            const entered = document.getElementById('trainer-pin-input').value.trim();
+            if (entered === getTrainerPin()) {
+                closeTrainerPinModal();
+                isClientView = false;
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('client');
+                window.history.replaceState({}, '', cleanUrl.toString());
+                applyModeLayout();
+                if (isCloudConnected) {
+                    startCloudSync();
+                } else {
+                    loadLocalClients();
+                    ensureSampleClientIfEmpty();
+                    activeClientId = clients[0]?.id || null;
+                    renderClientList();
+                    renderMainWorkspace();
+                }
+                showToast('Unlocked Trainer Dashboard!');
+            } else {
+                showToast('Incorrect Trainer PIN!', 'error');
+            }
+        }
+
+        function openPinSettingsModal() {
+            document.getElementById('new-trainer-pin-input').value = getTrainerPin();
+            document.getElementById('pin-settings-modal').classList.remove('hidden');
+        }
+
+        function closePinSettingsModal() {
+            document.getElementById('pin-settings-modal').classList.add('hidden');
+        }
+
+        function saveNewTrainerPin(e) {
+            e.preventDefault();
+            const newPin = document.getElementById('new-trainer-pin-input').value.trim();
+            if (newPin.length >= 4) {
+                localStorage.setItem(TRAINER_PIN_KEY, newPin);
+                closePinSettingsModal();
+                showToast(`Trainer PIN updated to ${newPin}`);
+            }
+        }
+
+        function openHomeScreenModal() {
+            document.getElementById('homescreen-modal').classList.remove('hidden');
+        }
+
+        function closeHomeScreenModal() {
+            document.getElementById('homescreen-modal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // BACKUP & RESTORE (JSON)
+        // ==========================================
+        function exportData() {
+            const dataStr = JSON.stringify(clients, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `Optimum_Fitness_Clients_${dateStr}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Backup file downloaded!');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        clients = imported.map(normalizeClientRecord);
+                        activeClientId = clients.length > 0 ? clients[0].id : null;
+                        await saveAllClientsToStorageAndCloud();
+                        renderClientList();
+                        renderMainWorkspace();
+                        showToast(`Restored & synced ${clients.length} client records!`);
+                    } else {
+                        showToast('Invalid backup file format', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error reading backup file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ==========================================
+        // FORMATTING HELPERS
+        // ==========================================
+        function formatDisplayDate(isoDate) {
+            if (!isoDate) return '';
+            const parts = isoDate.split('-');
+            if (parts.length !== 3) return isoDate;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${parts[2]} ${months[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
+        }
+
+        function formatTime12Hour(time24) {
+            if (!time24) return '';
+            const [hStr, mStr] = time24.split(':');
+            let h = parseInt(hStr, 10);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${mStr} ${ampm}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Expose functions to inline HTML event handlers (required for <script type="module">)
+        Object.assign(window, {
+            openAddClientModal,
+            openEditClientModal,
+            closeClientModal,
+            saveClientForm,
+            updatePaymentDateLabel,
+            confirmDeleteClient,
+            closeConfirmModal,
+            selectClient,
+            renderClientList,
+            toggleSessionComplete,
+            updateSessionField,
+            fillCurrentTime,
+            toggleClientPaymentStatus,
+            shareLivePortalLinkWhatsApp,
+            sharePaymentWhatsApp,
+            shareSingleSessionWhatsApp,
+            shareFullReportWhatsApp,
+            shareRenewalWhatsApp,
+            startNext12SessionsPackage,
+            cycleQuote,
+            exportData,
+            importData,
+            openTrainerPinModal,
+            closeTrainerPinModal,
+            verifyTrainerPin,
+            openPinSettingsModal,
+            closePinSettingsModal,
+            saveNewTrainerPin,
+            openHomeScreenModal,
+            closeHomeScreenModal
+        });
+
+        // Boot App on Load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
